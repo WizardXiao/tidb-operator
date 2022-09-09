@@ -67,6 +67,7 @@ func (bt *backupTracker) StartTrackLogBackupProgress(backup *v1alpha1.Backup) {
 	if _, exist := bt.logBackups[logkey]; exist {
 		return
 	}
+	klog.Infof("log backup %s/%s add progress tracker %s", backup.Namespace, backup.Name, logkey)
 	bt.logBackups[logkey] = logkey
 	go bt.refreshLogBackupCheckpointTs(backup.Namespace, backup.Name)
 }
@@ -84,19 +85,21 @@ func (bt *backupTracker) refreshLogBackupCheckpointTs(ns, name string) {
 	for range ticker.C {
 		logkey := genLogBackupKey(ns, name)
 		if _, exist := bt.logBackups[logkey]; !exist {
+			klog.Infof("log backup %s/%s progress tracker %s has been deleted, track complete", ns, name, logkey)
 			return
 		}
 		backup, err := bt.deps.BackupLister.Backups(ns).Get(name)
 		if errors.IsNotFound(err) {
-			klog.Infof("Backup %s/%s has been deleted %v", ns, name, err)
+			klog.Infof("Log Backup %s/%s has been deleted, will remove tracker %s, %v", ns, name, logkey, err)
 			bt.removeLogBackup(ns, name)
 			return
 		}
 		if err != nil {
-			klog.Infof("get Backup has error %v", err)
+			klog.Infof("get Log Backup %s/%s has error, will skip to the next time refresh, %v", ns, name, err)
 			continue
 		}
 		if backup.DeletionTimestamp != nil || backup.Status.Phase != v1alpha1.BackupRunning {
+			klog.Infof("Log Backup %s/%s is deleting or not running, will skip to the next time refresh, %s")
 			continue
 		}
 		bt.doRefreshLogBackupCheckpointTs(backup)

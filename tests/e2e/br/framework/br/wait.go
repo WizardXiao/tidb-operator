@@ -15,15 +15,12 @@ package backup
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
-	"path"
 	"time"
 
 	"github.com/pingcap/tidb-operator/pkg/apis/pingcap/v1alpha1"
 	"github.com/pingcap/tidb-operator/pkg/apis/util/config"
 	"github.com/pingcap/tidb-operator/pkg/client/clientset/versioned"
-	"github.com/pingcap/tidb-operator/pkg/pdapi"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -121,25 +118,17 @@ func WaitForRestoreComplete(c versioned.Interface, ns, name string, timeout time
 }
 
 // WaitForRestoreComplete will poll and wait until timeout or restore complete condition is true
-func WaitForLogBackupReachTS(name, pdhost, expect string, timeout time.Duration) error {
+func WaitForLogBackupReachTS(c versioned.Interface, ns, name, expect string, timeout time.Duration) error {
 	if err := wait.PollImmediate(poll*5, timeout, func() (bool, error) {
-		etcdCli, err := pdapi.NewPdEtcdClient(pdhost, 30*time.Second, nil)
+		b, err := c.PingcapV1alpha1().Backups(ns).Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
-		streamKeyPrefix := "/tidb/br-stream"
-		taskCheckpointPath := "/checkpoint"
-		key := path.Join(streamKeyPrefix, taskCheckpointPath, name)
-		kvs, err := etcdCli.Get(key, true)
+		checkpointTS, err := config.ParseTSString(b.Status.LogCheckpointTs)
 		if err != nil {
 			return false, err
 		}
-		if len(kvs) != 1 {
-			return false, fmt.Errorf("get log backup checkpoint ts from pd %s failed", pdhost)
-		}
-		checkpointTS := binary.BigEndian.Uint64(kvs[0].Value)
 		expectTS, err := config.ParseTSString(expect)
-
 		if err != nil {
 			return false, err
 		}
@@ -149,6 +138,32 @@ func WaitForLogBackupReachTS(name, pdhost, expect string, timeout time.Duration)
 		return false, nil
 	}); err != nil {
 		return fmt.Errorf("can't wait for log backup reach ts complete: %v", err)
+	}
+	return nil
+}
+
+// WaitForRestoreCompleteByProgress
+func WaitForRestoreProgressComplete(c versioned.Interface, ns, name string, timeout time.Duration) error {
+	if err := wait.PollImmediate(poll, timeout, func() (bool, error) {
+		r, err := c.PingcapV1alpha1().Restores(ns).Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		// wait for snapshot restore complete
+		if r.Status.SnapshotRestoreProgress != "100%" {
+			return false, nil
+		}
+
+		if r.Spec.Mode != v1alpha1.RestoreModePiTR {
+			return true, nil
+		}
+		// wait for point restore complete
+		if r.Status.PointRestoreProgress != "100%" {
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		return fmt.Errorf("can't wait for restore Progress complete: %v", err)
 	}
 	return nil
 }

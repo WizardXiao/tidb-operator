@@ -506,12 +506,12 @@ var _ = ginkgo.Describe("Backup and Restore", func() {
 			err = blockwriter.New().Write(context.Background(), masterDSN)
 			framework.ExpectNoError(err)
 
-			ginkgo.By("Forward master PD service")
-			masterPDHost, err := portforward.ForwardOnePort(ctx, f.PortForwarder, ns, getPDServiceResourceName(masterClusterName), int(brutil.PDServicePort))
-			framework.ExpectNoError(err)
+			// ginkgo.By("Forward master PD service")
+			// masterPDHost, err := portforward.ForwardOnePort(ctx, f.PortForwarder, ns, getPDServiceResourceName(masterClusterName), int(brutil.PDServicePort))
+			// framework.ExpectNoError(err)
 			ginkgo.By("Wait log backup reach current ts")
 			currentTS := strconv.FormatUint(config.GoTimeToTS(time.Now()), 10)
-			err = brutil.WaitForLogBackupReachTS(logBackupName, masterPDHost, currentTS, logbackupCatchUpTimeout)
+			err = brutil.WaitForLogBackupReachTS(f.ExtClient, ns, logBackupName, currentTS, logbackupCatchUpTimeout)
 			framework.ExpectNoError(err)
 
 			ginkgo.By("Create log-backup.enable TiDB cluster for pitr-backup")
@@ -529,6 +529,10 @@ var _ = ginkgo.Describe("Backup and Restore", func() {
 				restore.Spec.PitrFullBackupStorageProvider.S3 = fullBackup.Spec.S3
 				restore.Spec.PitrRestoredTs = currentTS
 			})
+			framework.ExpectNoError(err)
+
+			ginkgo.By("Check restore progress complete")
+			err = brutil.WaitForRestoreProgressComplete(f.ExtClient, ns, restoreName, logbackupCatchUpTimeout)
 			framework.ExpectNoError(err)
 
 			ginkgo.By("Forward restore TiDB cluster service")
