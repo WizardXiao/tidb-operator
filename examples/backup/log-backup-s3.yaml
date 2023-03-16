@@ -1,0 +1,35 @@
+apiVersion: pingcap.com/v1alpha1
+kind: Backup
+metadata:
+  name: basic-log-backup-s31
+  # namespace: test
+spec:
+  cleanPolicy: Delete
+  backupMode: log
+  # Only needed for TiDB Operator < v1.1.7 or TiDB < v4.0.8
+  # from:
+  #   host: ${tidb-host}
+  #   port: ${tidb-port}
+  #   user: ${tidb-user}
+  #   secretName: backup-basic-tidb-secret
+  br:
+    cluster: pitr-master
+    clusterNamespace: default
+    # logLevel: info
+    # statusAddr: ${status-addr}
+    # concurrency: 4
+    # rateLimit: 0
+    # checksum: true
+    # sendCredToTikv: true
+    # options:
+    # - --lastbackupts=420134118382108673
+  s3:
+    provider: ceph
+    endpoint: http://10.96.91.157:9000
+    secretName: ceph-secret
+    bucket: local
+    prefix: log-backup-s3-demo1
+  # commitTs: "2022-09-16T05:31:00+08:00"
+  # logTruncateUntil: "2022-12-23T11:59:00+08:00"
+  # logStop: true
+  

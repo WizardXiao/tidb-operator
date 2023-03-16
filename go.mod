@@ -34,7 +34,7 @@ require (
 	github.com/pingcap/TiProxy/lib v0.0.0-20230201020701-df06ec482c69
 	github.com/pingcap/advanced-statefulset/client v1.17.1-0.20210831081013-d54ef54b2938
 	github.com/pingcap/errors v0.11.4
-	github.com/pingcap/kvproto v0.0.0-20200927054727-1290113160f0
+	github.com/pingcap/kvproto v0.0.0-20230110041705-7cd28226c2a2
 	github.com/pingcap/tidb v2.1.0-beta+incompatible
 	github.com/pingcap/tidb-operator/pkg/apis v1.4.2
 	github.com/pingcap/tidb-operator/pkg/client v1.4.2

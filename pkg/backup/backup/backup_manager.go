@@ -56,6 +56,13 @@ func NewBackupManager(deps *controller.Dependencies) backup.BackupManager {
 }
 
 func (bm *backupManager) Sync(backup *v1alpha1.Backup) error {
+	// because log backup status should be consistent with tikv task,
+	// but the refresh in backup tracker may be 1 min delay,
+	// so we need refresh log backup status at the beginning of sync.
+	if backup.Spec.Mode == v1alpha1.BackupModeLog {
+		bm.backupTracker.DoRefreshLogBackupStatus(backup)
+	}
+
 	// because a finalizer is installed on the backup on creation, when backup is deleted,
 	// backup.DeletionTimestamp will be set, controller will be informed with an onUpdate event,
 	// this is the moment that we can do clean up work.
@@ -63,7 +70,7 @@ func (bm *backupManager) Sync(backup *v1alpha1.Backup) error {
 		return err
 	}
 
-	if backup.DeletionTimestamp != nil {
+	if backup.DeletionTimestamp != nil && v1alpha1.IsLogBackupAlreadyStop(backup) {
 		// backup is being deleted, don't do anything, return directly.
 		return nil
 	}
@@ -782,6 +789,10 @@ func (bm *backupManager) skipLogBackupSync(backup *v1alpha1.Backup) (bool, error
 	if backup.Spec.Mode != v1alpha1.BackupModeLog {
 		return false, nil
 	}
+
+	// log backup refresh status according to tikv task
+	bm.backupTracker.DoRefreshLogBackupStatus(backup)
+
 	var skip bool
 	var err error
 	command := v1alpha1.ParseLogBackupSubcommand(backup)
