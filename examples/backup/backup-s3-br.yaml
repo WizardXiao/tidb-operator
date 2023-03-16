@@ -1,0 +1,48 @@
+---
+apiVersion: pingcap.com/v1alpha1
+kind: Backup
+metadata:
+  name: demo1-backup-s3
+  namespace: default
+  # annotations:
+    # iam.amazonaws.com/role: "arn:aws:iam::123456789:role"
+spec:
+  # backupType: full
+  # useKMS: false
+  # serviceAccount: myServiceAccount
+  cleanPolicy: Delete
+  # resources:
+  #   limits:
+  #     cpu: 300m
+  #     memory: 300Mi
+  #   requests:
+  #     memory: 300Mi
+  br:
+    cluster: pitr-master
+    clusterNamespace: default
+    # logLevel: info
+    # statusAddr: <status-addr>
+    # concurrency: 4
+    # rateLimit: 0
+    # timeAgo: <time>
+    # checksum: true
+    # sendCredToTikv: true
+  # from:
+  #   host: 172.30.6.56
+  #   secretName: mySecret
+    # port: 4000
+    # user: root
+    # tlsClientSecretName: <backup-tls-secretname>
+  s3:
+    provider: ceph
+    endpoint: http://10.96.82.251:9000
+    secretName: ceph-secret
+    bucket: local
+    prefix: full-backup-s3-demo1
+  # backoffRetryPolicy:
+  #   maxRetryTimes: 2
+  #   minRetryDuration: 60
+  #   retryTimeout: 60
+  # env:
+  # - name: E2E_TEST_ENV
+  #   value: Extend_BACKUP_TIME

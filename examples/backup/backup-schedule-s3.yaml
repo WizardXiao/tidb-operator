@@ -1,0 +1,58 @@
+apiVersion: pingcap.com/v1alpha1
+kind: BackupSchedule
+metadata:
+  name: basic-backup-schedule-s3
+  namespace: default
+spec:
+  # maxBackups: 2
+  #pause: true
+  maxReservedTime: "8m"
+  schedule: "*/5 * * * *"
+  # schedule: "*/1 * * * *"
+  backupTemplate:
+    # Only needed for TiDB Operator < v1.1.7 or TiDB < v4.0.8
+    # from:
+    #   host: ${tidb_host}
+    #   port: ${tidb_port}
+    #   user: ${tidb_user}
+    #   secretName: backup-demo1-tidb-secret
+    cleanPolicy: Delete
+    br:
+      cluster: pitr-master
+      clusterNamespace: default
+      # logLevel: info
+      # statusAddr: ${status-addr}
+      # concurrency: 4
+      # rateLimit: 0
+      # checksum: true
+      # sendCredToTikv: true
+    s3:
+      provider: ceph
+      endpoint: http://10.96.20.32:9000
+      secretName: ceph-secret
+      bucket: local
+      prefix: backup-schedule-s3-demo1
+  logBackupTemplate:
+    # Only needed for TiDB Operator < v1.1.7 or TiDB < v4.0.8
+    # from:
+    #   host: ${tidb_host}
+    #   port: ${tidb_port}
+    #   user: ${tidb_user}
+    #   secretName: backup-demo1-tidb-secret
+    backupMode: log
+    cleanPolicy: Delete
+    br:
+      cluster: pitr-master
+      clusterNamespace: default
+      # logLevel: info
+      # statusAddr: ${status-addr}
+      # concurrency: 4
+      # rateLimit: 0
+      # checksum: true
+      # sendCredToTikv: true
+    s3:
+      provider: ceph
+      endpoint: http://10.96.20.32:9000
+      secretName: ceph-secret
+      bucket: local
+      prefix: backup-schedule-s3-demo1

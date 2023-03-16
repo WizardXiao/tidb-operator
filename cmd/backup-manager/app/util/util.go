@@ -29,7 +29,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pingcap/errors"
-	kvbackup "github.com/pingcap/kvproto/pkg/backup"
+	kvbackup "github.com/pingcap/kvproto/pkg/brpb"
 	"github.com/pingcap/tidb-operator/cmd/backup-manager/app/constants"
 	"github.com/pingcap/tidb-operator/pkg/apis/pingcap/v1alpha1"
 	"github.com/pingcap/tidb-operator/pkg/backup/util"

@@ -182,7 +182,7 @@ func updateLogBackupStatus(backup *v1alpha1.Backup, condition *v1alpha1.BackupCo
 	isWholeStatusUpdate := updateWholeLogBackupStatus(backup, condition, newStatus)
 	// DeletionTimestamp is not nil when delete and clean backup, no subcommand status needs to be updated
 	// LogCheckpointTs is not nil when just update checkpoint ts, no subcommand status needs to be updated
-	if backup.DeletionTimestamp != nil || (newStatus != nil && newStatus.LogCheckpointTs != nil) {
+	if backup.DeletionTimestamp != nil || (newStatus != nil && newStatus.LogCheckpointTs != nil) || (condition != nil && condition.Command == "") {
 		return isWholeStatusUpdate
 	}
 	// update subcommand status
@@ -227,6 +227,11 @@ func updateWholeLogBackupStatus(backup *v1alpha1.Backup, condition *v1alpha1.Bac
 	doUpdateStatusAndCondition := func(newCondition *v1alpha1.BackupCondition, newStatus *BackupUpdateStatus) bool {
 		isStatusUpdate := updateBackupStatus(&backup.Status, newStatus)
 		isConditionUpdate := v1alpha1.UpdateBackupCondition(&backup.Status, newCondition)
+
+		klog.Infof("isStatusUpdate %v", isStatusUpdate)
+		klog.Infof("isConditionUpdate %v", isConditionUpdate)
+		klog.Infof("phause %s ", backup.Status.Phase)
+
 		return isStatusUpdate || isConditionUpdate
 	}
 
@@ -302,13 +307,17 @@ func updateWholeLogBackupStatus(backup *v1alpha1.Backup, condition *v1alpha1.Bac
 		return doUpdateStatusAndCondition(condition, status)
 	}
 
-	// just update checkpoint ts
-	if status != nil && status.LogCheckpointTs != nil {
-		return doUpdateStatusAndCondition(nil, status)
+	// // just update checkpoint ts
+	// if status != nil && status.LogCheckpointTs != nil {
+	// 	return doUpdateStatusAndCondition(nil, status)
+	// }
+
+	if condition != nil && condition.Command == "" {
+		return doUpdateStatusAndCondition(condition, status)
 	}
 
 	// subcommand type should be set in condition, if not, will not update status info according to these condion and status.
-	if condition == nil || condition.Command == "" {
+	if condition == nil {
 		return false
 	}
 

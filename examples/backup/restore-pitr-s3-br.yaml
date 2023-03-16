@@ -1,0 +1,48 @@
+---
+apiVersion: pingcap.com/v1alpha1
+kind: Restore
+metadata:
+  name: demo1-restore-pitr-s3-br
+  # namespace: test1
+  # annotations:
+    # iam.amazonaws.com/role: "arn:aws:iam::123456789:role"
+spec:
+  # backupType: full
+  restoreMode: pitr
+  pitrRestoredTs: "2023-03-08T07:30:00+08:00"
+  # useKMS: false
+  # serviceAccount: myServiceAccount
+  # resources:
+  #   limits:
+  #     cpu: 300m
+  #     memory: 300Mi
+  #   requests:
+  #     memory: 300Mi
+  br:
+    cluster: pitr-restore
+    options:
+      - --pitr-concurrency=2
+    # clusterNamespce: <restore-namespace>
+    # db: <db-name>
+    # table: <table-name>
+    # logLevel: info
+    # statusAddr: <status-addr>
+    # concurrency: 4
+    # rateLimit: 0
+    # timeAgo: <time>
+    # checksum: true
+    # sendCredToTikv: true
+  s3:
+    provider: ceph
+    endpoint: http://10.96.82.251:9000
+    secretName: ceph-secret
+    bucket: local
+    prefix: log-backup-s3-demo1
+  pitrFullBackupStorageProvider:
+    s3:
+      provider: ceph
+      endpoint: http://10.96.82.251:9000
+      secretName: ceph-secret
+      bucket: local
+      prefix: full-backup-s3-demo1
+
